@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Healthcare Visual Analytics</title>
+
+  <!-- D3 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- ArcGIS -->
+  <link
+    rel="stylesheet"
+    href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
+  />
+  <script src="https://js.arcgis.com/4.29/"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <h1>Healthcare Visual Analytics Tool</h1>
+
+  <div id="dashboard">
+    <div class="chart-container">
+      <svg id="testResults"></svg>
+    </div>
+
+    <div class="chart-container">
+      <svg id="billing"></svg>
+    </div>
+
+    <div class="chart-container">
+      <svg id="demographics"></svg>
+    </div>
+
+    <div class="chart-container">
+      <svg id="ageAnalysis"></svg>
+    </div>
+
+    <div class="chart-container">
+      <svg id="conditionMatrix"></svg>
+    </div>
+
+
+
+  </div>
+
+  <script type="module" src="js/dataLoader.js"></script>
+</body>
+
+</html>
