@@ -1,20 +1,26 @@
+
 import { state } from '../state.js'
 
 let tooltip
 
 export function renderTestResultsBar(data = state.data) {
   const svg = d3.select('#testResults')
+  if (svg.empty()) return
   const container = svg.node().parentNode
 
-  const width = container.clientWidth
-  const height = container.clientHeight
+const width = container.clientWidth
+const height = container.clientHeight
 
-  // Clear for resize-safe redraw
-  svg.selectAll('*').remove()
+if (width === 0 || height === 0) {
+  requestAnimationFrame(() => renderTestResultsBar(data))
+  return
+}
 
-  svg
-    .attr('viewBox', `0 0 ${width} ${height}`)
-    .attr('preserveAspectRatio', 'xMidYMid meet')
+svg.selectAll('*').remove()
+
+svg
+  .attr('viewBox', `0 0 ${width} ${height}`)
+  .attr('preserveAspectRatio', 'xMidYMid meet')
 
   const margin = { top: 50, right: 20, bottom: 60, left: 70 }
   const innerWidth = width - margin.left - margin.right

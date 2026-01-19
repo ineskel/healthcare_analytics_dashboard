@@ -1,9 +1,12 @@
 import { state } from '../state.js'
 
-export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
-  const svg = d3.select('#ageAnalysis')
-  const container = svg.node().parentNode
+let tooltip // singleton tooltip for this module
 
+export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
+  const svg = d3.select('#ageBand')
+  if (svg.empty()) return
+
+  const container = svg.node().parentNode
   const width = container.clientWidth
   const height = container.clientHeight
 
@@ -16,6 +19,22 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
   svg
     .attr('viewBox', `0 0 ${width} ${height}`)
     .attr('preserveAspectRatio', 'xMidYMid meet')
+
+  // ------------------
+  // Tooltip (singleton)
+  // ------------------
+  if (!tooltip) {
+    tooltip = d3.select('body')
+      .append('div')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('background', 'white')
+      .style('border', '1px solid #ccc')
+      .style('padding', '6px 10px')
+      .style('border-radius', '4px')
+      .style('pointer-events', 'none')
+      .style('opacity', 0)
+  }
 
   // ------------------
   // Title
@@ -48,9 +67,7 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
 
   // Sort age groups logically
   const order = ['0–18', '19–40', '41–65', '65+', 'Unknown']
-  stats.sort((a, b) =>
-    order.indexOf(a.ageGroup) - order.indexOf(b.ageGroup)
-  )
+  stats.sort((a, b) => order.indexOf(a.ageGroup) - order.indexOf(b.ageGroup))
 
   // ------------------
   // Scales
@@ -77,8 +94,7 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
     .attr('transform', `translate(0,${innerHeight})`)
     .call(d3.axisBottom(x))
 
-  g.append('g')
-    .call(d3.axisLeft(yLeft))
+  g.append('g').call(d3.axisLeft(yLeft))
 
   g.append('g')
     .attr('transform', `translate(${innerWidth},0)`)
@@ -100,9 +116,33 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
     .text('Total Revenue')
 
   // ------------------
+  // Tooltip helpers
+  // ------------------
+  function showTip(event, d) {
+    tooltip
+      .style('opacity', 1)
+      .html(`
+        <strong>${d.ageGroup}</strong><br/>
+        Admissions: ${(+d.admissions).toLocaleString()}<br/>
+        Revenue: ${formatMoney(d.revenue)}
+      `)
+    moveTip(event)
+  }
+
+  function moveTip(event) {
+    tooltip
+      .style('left', `${event.pageX + 10}px`)
+      .style('top', `${event.pageY - 28}px`)
+  }
+
+  function hideTip() {
+    tooltip.style('opacity', 0)
+  }
+
+  // ------------------
   // Bars (Admissions)
   // ------------------
-  g.selectAll('.admission-bar')
+  const bars = g.selectAll('.admission-bar')
     .data(stats)
     .enter()
     .append('rect')
@@ -112,7 +152,16 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
     .attr('width', x.bandwidth())
     .attr('height', 0)
     .attr('fill', '#4C78A8')
-    .transition()
+    .style('cursor', 'default')
+
+  // attach tooltip handlers (work even during transition)
+  bars
+    .on('mouseover', (event, d) => showTip(event, d))
+    .on('mousemove', (event) => moveTip(event))
+    .on('mouseout', hideTip)
+
+  // animate after handlers are attached
+  bars.transition()
     .duration(800)
     .attr('y', d => yLeft(d.admissions))
     .attr('height', d => innerHeight - yLeft(d.admissions))
@@ -135,10 +184,15 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
     .data(stats)
     .enter()
     .append('circle')
+    .attr('class', 'revenue-dot')
     .attr('cx', d => x(d.ageGroup) + x.bandwidth() / 2)
     .attr('cy', d => yRight(d.revenue))
     .attr('r', 4)
     .attr('fill', '#F58518')
+    .style('cursor', 'default')
+    .on('mouseover', (event, d) => showTip(event, d))
+    .on('mousemove', (event) => moveTip(event))
+    .on('mouseout', hideTip)
 
   // ------------------
   // Legend
@@ -166,4 +220,10 @@ export function renderAgeBandAnalysis(data = state.filteredData || state.data) {
     .attr('x', 18)
     .attr('y', 34)
     .text('Revenue')
+}
+
+function formatMoney(x) {
+  const n = +x
+  if (!Number.isFinite(n)) return '0'
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

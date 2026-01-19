@@ -1,16 +1,16 @@
 import { state } from '../state.js'
 
-let tooltip
+let tooltip // singleton tooltip for this module
 
 export function renderGenderPie(data = state.filteredData || state.data) {
-  const svg = d3.select('#demographics')
+  const svg = d3.select('#genderPie')
+  if (svg.empty()) return
+
   const container = svg.node().parentNode
+  const width = container.clientWidth || 300
+  const height = container.clientHeight || 300
+  const radius = Math.min(width, height) / 2 - 20
 
-  const width = container.clientWidth
-  const height = container.clientHeight
-  const radius = Math.min(width, height) / 2 - 40
-
-  // Clear previous render
   svg.selectAll('*').remove()
 
   svg
@@ -18,30 +18,10 @@ export function renderGenderPie(data = state.filteredData || state.data) {
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
   // ------------------
-  // Title
-  // ------------------
-  svg
-    .append('text')
-    .attr('x', width / 2)
-    .attr('y', 30)
-    .attr('text-anchor', 'middle')
-    .attr('font-weight', 'bold')
-    .attr('font-size', 16)
-    .text('Patient Sex Distribution')
-
-  const g = svg
-    .append('g')
-    .attr(
-      'transform',
-      `translate(${width / 2}, ${height / 2 + 10})`
-    )
-
-  // ------------------
   // Tooltip (singleton)
   // ------------------
   if (!tooltip) {
-    tooltip = d3
-      .select('body')
+    tooltip = d3.select('body')
       .append('div')
       .attr('class', 'tooltip')
       .style('position', 'absolute')
@@ -54,136 +34,106 @@ export function renderGenderPie(data = state.filteredData || state.data) {
   }
 
   // ------------------
-  // Aggregate data
+  // Title
   // ------------------
-  const counts = d3
-    .rollups(
-      data,
-      v => v.length,
-      d => d.Gender || 'Unknown'
-    )
-    .map(([key, value]) => ({ key, value }))
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('font-weight', 'bold')
+    .text('Patient Gender Distribution')
+
+  const g = svg.append('g')
+    .attr('transform', `translate(${width / 2},${height / 2 + 10})`)
+
+  // ------------------
+  // Data aggregation
+  // ------------------
+  const counts = d3.rollups(
+    state.data || [],                 // IMPORTANT: aggregate from full data so slice sizes don’t "jump" when filtered
+    v => v.length,
+    d => d.Gender || 'Unknown'
+  ).map(([key, value]) => ({ key, value }))
 
   const total = d3.sum(counts, d => d.value)
 
   // ------------------
-  // Color scale
+  // Scales
   // ------------------
-  const color = d3
-    .scaleOrdinal()
+  const color = d3.scaleOrdinal()
     .domain(counts.map(d => d.key))
     .range(d3.schemeTableau10)
 
-  // ------------------
-  // Pie & arc generators
-  // ------------------
-  const pie = d3
-    .pie()
-    .value(d => d.value)
-    .sort(null)
+  const pie = d3.pie().value(d => d.value)
+  const arc = d3.arc().innerRadius(0).outerRadius(radius)
+  const arcHover = d3.arc().innerRadius(0).outerRadius(radius + 6)
 
-  const arc = d3
-    .arc()
-    .innerRadius(0)
-    .outerRadius(radius)
+  const selectedGender = state.filters?.gender || null
 
   // ------------------
   // Draw slices
   // ------------------
-  g.selectAll('path')
-    .data(pie(counts))
+  const slices = g.selectAll('path')
+    .data(pie(counts), d => d.data.key)
     .enter()
     .append('path')
+    .attr('d', d => (selectedGender && d.data.key === selectedGender ? arcHover(d) : arc(d)))
     .attr('fill', d => color(d.data.key))
     .attr('stroke', 'white')
-    .attr('stroke-width', 1)
-    .attr('opacity', d =>
-      state.filters.gender
-        ? d.data.key === state.filters.gender
-          ? 1
-          : 0.3
-        : 1
-    )
-    .on('mouseover', (event, d) => {
+    .style('stroke-width', '2px')
+    .style('cursor', 'pointer')
+    .style('opacity', d => {
+      if (!selectedGender) return 1
+      return d.data.key === selectedGender ? 1 : 0.35
+    })
+
+    // ------------------
+    // Hover tooltip
+    // ------------------
+    .on('mouseover', function (event, d) {
+      d3.select(this).attr('d', arcHover(d))
+
+      const pct = total ? (d.data.value / total) * 100 : 0
       tooltip
         .style('opacity', 1)
         .html(`
           <strong>${d.data.key}</strong><br/>
-          Count: ${d.data.value}<br/>
-          ${(d.data.value / total * 100).toFixed(1)}%
+          Count: ${d.data.value.toLocaleString()}<br/>
+          ${pct.toFixed(1)}%
         `)
     })
-    .on('mousemove', event => {
+    .on('mousemove', (event) => {
       tooltip
         .style('left', `${event.pageX + 10}px`)
         .style('top', `${event.pageY - 28}px`)
     })
-    .on('mouseout', () => {
+    .on('mouseout', function (event, d) {
+      // keep hover expansion if it’s selected; otherwise shrink back
+      const keepExpanded = state.filters?.gender && d.data.key === state.filters.gender
+      d3.select(this).attr('d', keepExpanded ? arcHover(d) : arc(d))
       tooltip.style('opacity', 0)
     })
-    .on('click', (event, d) => {
-      const clickedGender = d.data.key
 
-      // Toggle filter
-      state.filters.gender =
-        state.filters.gender === clickedGender
-          ? null
-          : clickedGender
+    // ------------------
+    // Click-to-filter
+    // ------------------
+    .on('click', function (event, d) {
+      const clicked = d.data.key
 
-      // Notify dashboard
-      document.dispatchEvent(new Event('filters-changed'))
+      // Toggle behavior: click selected slice again to clear filter
+      if (state.filters.gender === clicked) {
+        state.filters.gender = null
+      } else {
+        state.filters.gender = clicked
+      }
+
+      // Notify the app to re-apply filters + re-render page-aware charts
+      document.dispatchEvent(new CustomEvent('filters-changed'))
+
+      // Optional immediate visual update (without waiting for full re-render)
+      const newSelected = state.filters.gender || null
+      slices
+        .style('opacity', dd => !newSelected ? 1 : (dd.data.key === newSelected ? 1 : 0.35))
+        .attr('d', dd => (newSelected && dd.data.key === newSelected ? arcHover(dd) : arc(dd)))
     })
-    .transition()
-    .duration(800)
-    .attrTween('d', d => {
-      const i = d3.interpolate(
-        { startAngle: 0, endAngle: 0 },
-        d
-      )
-      return t => arc(i(t))
-    })
-
-  // ------------------
-  // Legend
-  // ------------------
-  const legend = svg
-    .append('g')
-    .attr(
-      'transform',
-      `translate(20, ${height - counts.length * 20 - 20})`
-    )
-
-  const legendItem = legend
-    .selectAll('.legend-item')
-    .data(counts)
-    .enter()
-    .append('g')
-    .attr('class', 'legend-item')
-    .attr('transform', (d, i) => `translate(0, ${i * 20})`)
-    .style('cursor', 'pointer')
-    .on('click', (event, d) => {
-      state.filters.gender =
-        state.filters.gender === d.key ? null : d.key
-      document.dispatchEvent(new Event('filters-changed'))
-    })
-
-  legendItem
-    .append('rect')
-    .attr('width', 12)
-    .attr('height', 12)
-    .attr('fill', d => color(d.key))
-    .attr('opacity', d =>
-      state.filters.gender
-        ? d.key === state.filters.gender
-          ? 1
-          : 0.3
-        : 1
-    )
-
-  legendItem
-    .append('text')
-    .attr('x', 18)
-    .attr('y', 10)
-    .text(d => d.key)
-    .style('font-size', '12px')
 }

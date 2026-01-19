@@ -1,51 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Healthcare Visual Analytics</title>
 
-  <!-- D3 -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
 
-  <!-- ArcGIS -->
-  <link
-    rel="stylesheet"
-    href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
-  />
-  <script src="https://js.arcgis.com/4.29/"></script>
-
-  <link rel="stylesheet" href="css/style.css" />
+  <!-- D3 (keep if you need it later; not required for landing page) -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 </head>
 
 <body>
-  <h1>Healthcare Visual Analytics Tool</h1>
 
-  <div id="dashboard">
-    <div class="chart-container">
-      <svg id="testResults"></svg>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">
+        <span class="nav-dot"></span>
+        MediVis
+      </a>
+
+      <div class="nav-right">
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="pages/patient.html">Patient</a></li>
+          <li><a href="pages/map.html">Map</a></li>
+          <li><a href="pages/medical.html">Medical</a></li>
+        </ul>
+
+        <!-- optional: if you kept dark mode toggle -->
+        <!--
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+          <span class="theme-icon" aria-hidden="true">☾</span>
+        </button>
+        -->
+      </div>
     </div>
+  </nav>
 
-    <div class="chart-container">
-      <svg id="billing"></svg>
-    </div>
+  <!-- Active link helper (keep one, remove your inline script at bottom) -->
+  <script src="js/navActive.js"></script>
+  <!-- optional: <script src="js/theme.js"></script> -->
 
-    <div class="chart-container">
-      <svg id="demographics"></svg>
-    </div>
+  <main class="landing">
+    <section class="hero">
+      <div class="hero-bg"></div>
 
-    <div class="chart-container">
-      <svg id="ageAnalysis"></svg>
-    </div>
+      <div class="hero-inner">
+        <div class="hero-left">
+          
 
-    <div class="chart-container">
-      <svg id="conditionMatrix"></svg>
-    </div>
+          <h1 class="hero-title">
+            Healthcare Visual Analytics
+            <span class="hero-title-accent">Platform</span>
+          </h1>
 
+          <p class="hero-subtitle">
+            Explore patient trends, hospital performance, and geographic patterns
+            with responsive charts and an interactive map experience.
+          </p>
 
+          <div class="hero-actions">
+            <a class="btn primary" href="pages/patient.html">Open Patient Dashboard</a>
+            <a class="btn ghost" href="pages/map.html">Explore Map</a>
+          </div>
 
-  </div>
+          <div class="hero-metrics">
+            <div class="metric">
+              <div class="metric-value">55.5k</div>
+              <div class="metric-label">Records</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value">1k</div>
+              <div class="metric-label">Hospitals (map)</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value">Multi-page</div>
+              <div class="metric-label">Architecture</div>
+            </div>
+          </div>
+        </div>
 
-  <script type="module" src="js/dataLoader.js"></script>
+        <div class="hero-right">
+          <div class="preview-card">
+            <div class="preview-top">
+              <div class="preview-pill">Patient</div>
+              <div class="preview-pill">Medical</div>
+              <div class="preview-pill">Map</div>
+            </div>
+
+            <div class="preview-body">
+              <div class="preview-chart">
+                <div class="preview-bar" style="width: 78%"></div>
+                <div class="preview-bar" style="width: 52%"></div>
+                <div class="preview-bar" style="width: 64%"></div>
+                <div class="preview-bar" style="width: 40%"></div>
+                <div class="preview-bar" style="width: 58%"></div>
+              </div>
+
+              <div class="preview-lines">
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+              </div>
+
+              <div class="preview-footer">
+                <div class="mini-stat">
+                  <div class="mini-dot"></div>
+                  Responsive charts
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-dot"></div>
+                  Hover tooltips
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-dot"></div>
+                  Click-to-filter
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="section-head">
+        <h2>What you can explore</h2>
+        <p>Quick entry points into the dashboard pages.</p>
+      </div>
+
+      <div class="feature-grid">
+        <a class="feature-card" href="pages/patient.html">
+          <div class="feature-icon">1</div>
+          <div class="feature-title">Patient Dashboard</div>
+          <div class="feature-desc">
+            Test results distribution, gender split, age bands, and monthly billing trends.
+          </div>
+          <div class="feature-cta">Open →</div>
+        </a>
+
+        <a class="feature-card" href="pages/map.html">
+          <div class="feature-icon">2</div>
+          <div class="feature-title">Hospital Map</div>
+          <div class="feature-desc">
+            Clustered hospitals and interactive selection to drive charts and analytics.
+          </div>
+          <div class="feature-cta">Open →</div>
+        </a>
+
+        <a class="feature-card" href="pages/medical.html">
+          <div class="feature-icon">3</div>
+          <div class="feature-title">Medical Analytics</div>
+          <div class="feature-desc">
+            Condition-level patterns, multi-class “Test Results” perspective, and bias discussion.
+          </div>
+          <div class="feature-cta">Open →</div>
+        </a>
+
+        
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <div class="footer-inner">
+        <div class="footer-left">
+          <span class="nav-dot"></span>
+          <strong>MediVis</strong>
+          <span class="footer-muted">— Visual Analytics Dashboard</span>
+        </div>
+        <div class="footer-right footer-muted">
+          D3.js • ArcGIS JS API • Responsive UI
+        </div>
+      </div>
+    </footer>
+  </main>
+
 </body>
-
 </html>
+

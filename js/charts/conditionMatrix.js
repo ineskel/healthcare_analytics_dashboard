@@ -1,7 +1,10 @@
+// import * as d3 from '../vendor/d3.v7.min.js'
+
 import { state } from '../state.js'
 
 export function renderTestResultsVsConditions(data = state.data) {
   const svg = d3.select('#conditionMatrix')
+  if (svg.empty()) return
   const container = svg.node().parentNode
 
   // Make the heatmap bigger by using more width/height
